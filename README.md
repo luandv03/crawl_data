@@ -4,7 +4,7 @@
 
 ### Requirement:
 
--   Nodejs: version > 16.13.2
+-   Nodejs version: >= 16.13.2
 
 ### Run app
 
