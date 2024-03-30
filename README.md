@@ -13,4 +13,4 @@
 ### Data structure
 
 -   Data is saved in csv file
--   Structure: title, link, created_at
+-   Structure: title, link, desc, created_at

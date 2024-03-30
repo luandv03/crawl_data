@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer-extra");
 const pluginStealth = require("puppeteer-extra-plugin-stealth");
+const chalk = require("chalk");
 
 const { writeCSVFile } = require("./helpers/csvfiler.helper.js");
 
@@ -8,7 +9,7 @@ puppeteer.use(pluginStealth());
 
 // get posts
 const crawlVietNamTimes = async (pageNumber) => {
-    console.log("Loading page of " + pageNumber + 1);
+    console.log(chalk.yellow("Loading page of " + pageNumber + 1));
     const scrollDelay = 3000; // Thời gian chờ sau mỗi lần cuộn (3 giây)
 
     const browser = await puppeteer.launch({
@@ -40,19 +41,22 @@ const crawlVietNamTimes = async (pageNumber) => {
             await page.evaluate(
                 "window.scrollTo(0, document.body.scrollHeight);"
             );
-            console.log("Loading...");
+            console.log(chalk.yellow("Loading..."));
             await page.waitForTimeout(scrollDelay);
 
             // .box-cat-content
             // .article
             // .article-link f0 : a : title, link
             // .article-info > article-publish : time
+            // .article-desc
 
             const boxCatContentElement = await page.$(".box-cat-content");
 
             const listPostElement = await boxCatContentElement.$$(".article");
 
-            console.log("So luong post = ", listPostElement.length);
+            console.log(
+                chalk.yellow("So luong post = ", listPostElement.length)
+            );
 
             let count = 0;
             for (const item of listPostElement) {
@@ -60,6 +64,7 @@ const crawlVietNamTimes = async (pageNumber) => {
                 console.log("Dang crawl post so ", count);
                 const titleElement = await item.$(".article-title");
                 const datetimeElement = await item.$(".article-publish");
+                const descElement = await item.$(".article-desc");
 
                 const linkPost = await titleElement.$eval(
                     "a",
@@ -75,6 +80,10 @@ const crawlVietNamTimes = async (pageNumber) => {
                     await datetimeElement.getProperty("textContent")
                 ).jsonValue();
 
+                const desc = await (
+                    await descElement.getProperty("textContent")
+                ).jsonValue();
+
                 const d = new Date();
                 const day = d.getDate();
                 const month = d.getMonth() + 1;
@@ -85,6 +94,7 @@ const crawlVietNamTimes = async (pageNumber) => {
                 writeCSVFile("/vietnamtimes/" + filename, [
                     title,
                     linkPost,
+                    desc.trim(),
                     datetime,
                 ]);
             }
@@ -103,11 +113,11 @@ const crawlVietNamTimes = async (pageNumber) => {
             scrollAttempts++;
         }
     } catch (error) {
-        console.log("Have error: ", error);
+        console.log(chalk.red("Have error: ", error));
         return [];
     } finally {
         await browser.close();
-        console.log("Done " + pageNumber + 1);
+        console.log(chalk.gray("Done " + pageNumber + 1));
     }
 };
 

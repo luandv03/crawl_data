@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer-extra");
 const pluginStealth = require("puppeteer-extra-plugin-stealth");
+const chalk = require("chalk");
 
 const { writeCSVFile } = require("./helpers/csvfiler.helper.js");
 const filterDatetime = require("./helpers/filterDatetime.helper.js");
@@ -37,7 +38,7 @@ const crawlPostDetail = async (url) => {
 
 // get posts
 const crawlVnExpress = async (pageNumber) => {
-    console.log("Loading page of " + pageNumber);
+    console.log(chalk.green("Loading page of " + pageNumber));
     const scrollDelay = 3000; // Thời gian chờ sau mỗi lần cuộn (3 giây)
 
     const browser = await puppeteer.launch({
@@ -68,7 +69,7 @@ const crawlVnExpress = async (pageNumber) => {
             await page.evaluate(
                 "window.scrollTo(0, document.body.scrollHeight);"
             );
-            console.log("Loading...");
+            console.log(chalk.green("Loading..."));
             await page.waitForTimeout(scrollDelay);
 
             // get elements
@@ -78,13 +79,16 @@ const crawlVnExpress = async (pageNumber) => {
 
             let listPostElement = await page.$$(".item-news");
 
-            console.log("So luong post = ", listPostElement.length);
+            console.log(
+                chalk.green("So luong post = ", listPostElement.length)
+            );
 
             let count = 0;
             for (const item of listPostElement) {
                 count++;
                 console.log("Dang crawl post so ", count);
                 const titleElement = await item.$(".title-news");
+                const descElement = await item.$(".description");
 
                 let datetime;
                 try {
@@ -103,7 +107,13 @@ const crawlVnExpress = async (pageNumber) => {
                     "a",
                     (link) => link.href
                 );
+
                 const title = await titleElement.$eval(
+                    "a",
+                    (link) => link.innerText
+                );
+
+                const desc = await descElement.$eval(
                     "a",
                     (link) => link.innerText
                 );
@@ -118,6 +128,7 @@ const crawlVnExpress = async (pageNumber) => {
                 writeCSVFile("/vnexpress/" + filename, [
                     title,
                     linkPost,
+                    desc.trim(),
                     datetime,
                 ]);
             }
@@ -136,11 +147,11 @@ const crawlVnExpress = async (pageNumber) => {
             scrollAttempts++;
         }
     } catch (error) {
-        console.log("Have error: ", error);
+        console.log(chalk.red("Have error: ", error));
         return [];
     } finally {
         await browser.close();
-        console.log("Done " + pageNumber);
+        console.log(chalk.gray("Done " + pageNumber));
     }
 };
 
